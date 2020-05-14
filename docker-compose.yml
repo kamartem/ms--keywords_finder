@@ -1,0 +1,12 @@
+version: '3.7'
+
+
+services:
+
+  backend:
+    build:
+      dockerfile: Dockerfile
+      context: .
+    command: uwsgi --ini /opt/app/uwsgi.ini
+    ports:
+    - "8566:8080"

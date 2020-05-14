@@ -1,14 +1,12 @@
 import concurrent.futures
-import csv
 import logging
 import os
-import re
 import sys
 from collections import Counter
 from io import BytesIO
-from threading import Thread
 
 import requests
+import urllib3
 from bs4 import BeautifulSoup
 from django import forms
 from django.conf import settings
@@ -16,6 +14,8 @@ from django.conf.urls import url
 from django.http import HttpResponse
 from django.shortcuts import render
 from pyexcelerate import Workbook
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 CONNECTIONS = 100
 TIMEOUT = 5
@@ -31,7 +31,7 @@ TEMPLATES = [{
     'BACKEND': 'django.template.backends.django.DjangoTemplates',
     'DIRS': [os.path.join(BASE_DIR, 'templates')]
 }]
-DEBUG = os.getenv('DEBUG', True)
+DEBUG = os.getenv('DEBUG', False)
 
 settings.configure(DEBUG=DEBUG,
                    ROOT_URLCONF=sys.modules[__name__],
@@ -135,3 +135,7 @@ if __name__ == '__main__':
         application = get_wsgi_application()
         server = netius.servers.WSGIServer(app=application)
         server.serve(port=8566)
+
+from django.core.wsgi import get_wsgi_application
+
+application = get_wsgi_application()
