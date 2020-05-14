@@ -19,6 +19,9 @@ from pyexcelerate import Workbook
 
 CONNECTIONS = 100
 TIMEOUT = 5
+headers = {
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
+
 LOG = logging.getLogger(__name__)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -28,7 +31,7 @@ TEMPLATES = [{
     'BACKEND': 'django.template.backends.django.DjangoTemplates',
     'DIRS': [os.path.join(BASE_DIR, 'templates')]
 }]
-DEBUG = os.getenv('DEBUG', False)
+DEBUG = os.getenv('DEBUG', True)
 
 settings.configure(DEBUG=DEBUG,
                    ROOT_URLCONF=sys.modules[__name__],
@@ -44,25 +47,27 @@ class ProcessForm(forms.Form):
 
 
 def load_url(url):
-    ans = requests.get(f'http://{url}' if not url.startswith('http') else url, timeout=TIMEOUT)
-    return ans.text.lower()
+    url = f'http://{url}' if not url.startswith('http') else url
+    ans = requests.get(url, timeout=TIMEOUT, headers=headers)
+    return ans.content.decode('utf-8', 'ignore').lower()
 
 
-def get_pages(domain, count=10):
+def get_pages(domain, count=5):
     data = []
 
     try:
-        ans = requests.get(f'http://{domain}', timeout=TIMEOUT)
-        soup = BeautifulSoup(ans.content, features="html.parser")
+        ans = requests.get(f'http://{domain}', timeout=TIMEOUT, headers=headers)
+        ans.encoding = ans.apparent_encoding
+
+        soup = BeautifulSoup(ans.content.decode('utf-8', 'ignore'), features="lxml")
         hrefs = [
             f'http://{domain}{link["href"] if link["href"].startswith("/") else "/" + link["href"]}' for link in
             soup.find_all("a", href=lambda x: x and not x.startswith('http') and ':' not in x and not x.startswith('#'))
         ]
         hrefs2 = [link["href"] for link in soup.find_all("a", href=lambda x: x and domain in x)]
-
-        result = [domain] + hrefs + hrefs2
+        result = [f'http://{domain}', ] + hrefs + hrefs2
         c = Counter(result)
-        data = [domain[0] for domain in c.most_common(count)]
+        data = list(set([domain[0] for domain in c.most_common(count)]))
     except Exception as e:
         LOG.error(e)
 
@@ -73,7 +78,6 @@ def index(request):
     if request.method == 'POST':
         form = ProcessForm(request.POST)
         if form.is_valid():
-
             domains = form.cleaned_data.get('url_list').lower().splitlines()
             keywords = form.cleaned_data.get('keyword_list').lower().splitlines()
             results = {}
@@ -81,20 +85,14 @@ def index(request):
 
             domains = [domain for domain in domains if domain]
             keywords = [keyword for keyword in keywords if keyword]
-            with concurrent.futures.ThreadPoolExecutor(
-                    max_workers=CONNECTIONS) as executor:
-                future_to_domain = {
-                    executor.submit(get_pages, domain): domain
-                    for domain in domains
-                }
-                for future in concurrent.futures.as_completed(
-                        future_to_domain):
+            with concurrent.futures.ThreadPoolExecutor(max_workers=CONNECTIONS) as executor:
+                future_to_domain = {executor.submit(get_pages, domain): domain for domain in domains}
+                for future in concurrent.futures.as_completed(future_to_domain):
                     domain = future_to_domain[future]
                     for result in future.result():
                         results[result] = domain
 
-            with concurrent.futures.ThreadPoolExecutor(
-                    max_workers=CONNECTIONS) as executor:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=CONNECTIONS) as executor:
                 future_to_url = {executor.submit(load_url, url): url for url in results.keys()}
                 for future in concurrent.futures.as_completed(future_to_url):
                     url = future_to_url[future]
