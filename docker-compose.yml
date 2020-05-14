@@ -4,6 +4,7 @@ version: '3.7'
 services:
 
   backend:
+    restart: unless-stopped
     build:
       dockerfile: Dockerfile
       context: .
