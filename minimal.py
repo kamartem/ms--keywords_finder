@@ -32,7 +32,8 @@ DEBUG = os.getenv('DEBUG', False)
 
 settings.configure(DEBUG=DEBUG,
                    ROOT_URLCONF=sys.modules[__name__],
-                   TEMPLATES=TEMPLATES)
+                   TEMPLATES=TEMPLATES,
+                   ALLOWED_HOSTS=ALLOWED_HOSTS)
 
 
 class ProcessForm(forms.Form):
