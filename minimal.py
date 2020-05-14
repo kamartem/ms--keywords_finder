@@ -48,7 +48,7 @@ class ProcessForm(forms.Form):
 
 def load_url(url):
     url = f'http://{url}' if not url.startswith('http') else url
-    ans = requests.get(url, timeout=TIMEOUT, headers=headers)
+    ans = requests.get(url, timeout=TIMEOUT, headers=headers, verify=False)
     return ans.content.decode('utf-8', 'ignore').lower()
 
 
@@ -56,7 +56,7 @@ def get_pages(domain, count=5):
     data = []
 
     try:
-        ans = requests.get(f'http://{domain}', timeout=TIMEOUT, headers=headers)
+        ans = requests.get(f'http://{domain}', timeout=TIMEOUT, headers=headers, verify=False)
         ans.encoding = ans.apparent_encoding
 
         soup = BeautifulSoup(ans.content.decode('utf-8', 'ignore'), features="lxml")
