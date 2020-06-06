@@ -1,4 +1,4 @@
-django==3.0.6
+django==3.0.7
 netius==1.17.56
 requests==2.23.0
 beautifulsoup4==4.9.0
