@@ -1,4 +1,5 @@
 import logging
+from typing import List
 
 from fastapi import BackgroundTasks, Depends, FastAPI, Request
 from fastapi.templating import Jinja2Templates
@@ -47,7 +48,13 @@ async def background_task():
     logger.info('test')
 
 
-@app.post('/tasks/add')
+@app.get("/tasks/", response_model=List[schemas.Task])
+def read_tasks(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    tasks = crud.get_tasks(db, skip=skip, limit=limit)
+    return tasks
+
+
+@app.post('/tasks/add/')
 async def add_task(data: TextArea, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     data = data.dict()
 

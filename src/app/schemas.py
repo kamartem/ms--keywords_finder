@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List
 
 from pydantic import BaseModel
 
@@ -13,6 +13,7 @@ class TaskCreate(TaskBase):
 
 class Task(TaskBase):
     id: int
+    resources: List
 
     class Config:
         orm_mode = True
