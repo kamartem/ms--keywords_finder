@@ -1,4 +1,4 @@
-ARG PYTHON_VERSION=3.8.2-buster
+ARG PYTHON_VERSION=3.8.5-buster
 
 FROM python:${PYTHON_VERSION}
 
@@ -10,4 +10,4 @@ COPY /src "/opt/app"
 
 WORKDIR "/opt/app"
 
-EXPOSE 8080
+EXPOSE 8000

@@ -1,24 +1,35 @@
-<!DOCTYPE html>
 <html>
-<head>
-  <title>{{ title }}</title>
-  <style>
-    label {
-      width:125px;
-      display:inline-block
-    }
-  </style>
-  <link rel="stylesheet" href="https://unpkg.com/purecss@2.0.3/build/pure-min.css" integrity="sha384-cg6SkqEOCV1NbJoCu11+bm0NvBRc8IYLRGXkmNrqUBfTjmMYwNKPWBTIKyw9mHNJ" crossorigin="anonymous">
-</head>
-<body>
-<form action="/" method="post" class="pure-form" style="margin: 20px 0 0 100px">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <input type="submit" value="Начать">
-</form>
+<title></title>
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
 
-{% if data %}
-{{data}}
-{% endif %}
+<body>
+<div id="app">
+  <textarea name="" id="urls" cols="30" rows="10" v-model="urls"></textarea>
+  <textarea name="" id="keywords" cols="30" rows="10" v-model="keywords"></textarea>
+  <button @click="addText" id="add-textarea">click me</button>
+</div>
+
+<script>
+  new Vue({
+    el: "#app",
+    data: {
+      urls: '',
+      keywords: ''
+    },
+    methods: {
+      addText() {
+        return axios.post("/tasks/add", {
+          urls: this.urls,
+          keywords: this.keywords
+        }, {
+          headers: {
+            'Content-type': 'application/json',
+          }
+        }).then((response) => {});
+      }
+    }
+  });
+</script>
 </body>
 </html>
