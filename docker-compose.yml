@@ -1,5 +1,7 @@
 version: '3.7'
 
+volumes:
+  postgres_data:
 
 services:
 
@@ -9,3 +11,18 @@ services:
       dockerfile: Dockerfile
       context: .
     command: uwsgi --ini /opt/app/uwsgi.ini
+    env_file:
+      - .env.sample
+      - .env
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:12.4-alpine
+    restart: unless-stopped
+    command: postgres -c max_connections=100 -c shared_buffers=512MB -c effective_cache_size=1536MB -c work_mem=5242kB -c maintenance_work_mem=128MB -c min_wal_size=1GB -c max_wal_size=2GB -c checkpoint_completion_target=0.7 -c wal_buffers=16MB -c default_statistics_target=100
+    env_file:
+      - .env.sample
+      - .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data

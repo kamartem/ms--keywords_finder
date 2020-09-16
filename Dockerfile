@@ -6,7 +6,7 @@ COPY ./src/requirements.txt /requirements.txt
 
 RUN pip install -U pip && pip install -r /requirements.txt
 
-COPY /src "/opt/app"
+COPY ./src "/opt/app"
 
 WORKDIR "/opt/app"
 
