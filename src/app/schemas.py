@@ -20,7 +20,6 @@ class Task(TaskBase):
 
 class ResourceBase(BaseModel):
     url: str
-    done: bool
 
 
 class ResourceCreate(ResourceBase):
@@ -29,6 +28,7 @@ class ResourceCreate(ResourceBase):
 
 class Resource(ResourceBase):
     id: int
+    done: bool
     keywords_found: List[str] = []
 
     class Config:

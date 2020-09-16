@@ -37,12 +37,14 @@ async def home(request: Request):
 async def add_task(data: TextArea, db: Session = Depends(get_db)):
     data = data.dict()
 
-    domains = data.get('urls').lower().splitlines()
+    urls = data.get('urls').lower().splitlines()
     keywords = data.get('keywords').lower().splitlines()
 
     task = schemas.TaskCreate(keywords=keywords)
     task = crud.create_task(db=db, task=task)
 
-    print(f"TASK_ID: {task.id}")
+    for url in urls:
+        resource = schemas.ResourceCreate(url=url)
+        crud.create_resource(db=db, resource=resource, task_id=task.id)
 
     return {'task_id': task.id}

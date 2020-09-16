@@ -23,8 +23,8 @@ def get_resources(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Resource).offset(skip).limit(limit).all()
 
 
-def create_resource(db: Session, item: schemas.ResourceCreate, task_id: int):
-    db_resource = models.Resource(**item.dict(), task_id=task_id)
+def create_resource(db: Session, resource: schemas.ResourceCreate, task_id: int):
+    db_resource = models.Resource(**resource.dict(), task_id=task_id)
     db.add(db_resource)
     db.commit()
     db.refresh(db_resource)
