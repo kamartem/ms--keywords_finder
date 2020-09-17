@@ -26,3 +26,17 @@ class Resource(Base):
 
     task_id = Column(Integer, ForeignKey('tasks.id'))
     task = relationship('Task', back_populates='resources')
+
+    resource_items = relationship('ResourceItem', back_populates='resource')
+
+
+class ResourceItem(Base):
+    __tablename__ = 'resource_items'
+
+    id = Column(Integer, primary_key=True, index=True)
+    url = Column(String)
+    done = Column(Boolean, default=False)
+    keywords_found = Column(ARRAY(String))
+
+    resource_id = Column(Integer, ForeignKey('resources.id'))
+    resource = relationship('Resource', back_populates='resource_items')
