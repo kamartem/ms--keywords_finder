@@ -1,35 +1,10 @@
-<html>
-<title></title>
-<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
-<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+{% extends "base.html" %}
 
-<body>
-<div id="app">
-  <textarea name="" id="urls" cols="30" rows="10" v-model="urls"></textarea>
-  <textarea name="" id="keywords" cols="30" rows="10" v-model="keywords"></textarea>
-  <button @click="addText" id="add-textarea">click me</button>
-</div>
+{% block menu %}
+  <p class="level-item"><a href="/add/">Добавить задачу</a></p>
+  <p class="level-item"><a href="/results/">Посмотреть результаты</a></p>
+{% endblock %}
 
-<script>
-  new Vue({
-    el: "#app",
-    data: {
-      urls: '',
-      keywords: ''
-    },
-    methods: {
-      addText() {
-        return axios.post("/tasks/add", {
-          urls: this.urls,
-          keywords: this.keywords
-        }, {
-          headers: {
-            'Content-type': 'application/json',
-          }
-        }).then((response) => {});
-      }
-    }
-  });
-</script>
-</body>
-</html>
+{% block js %}
+
+{% endblock %}

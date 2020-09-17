@@ -1,0 +1,44 @@
+<html>
+<title></title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.0/css/bulma.min.css">
+
+        <link
+          type="text/css"
+          rel="stylesheet"
+          href="https://unpkg.com/bootstrap/dist/css/bootstrap.min.css"
+        />
+        <link
+          type="text/css"
+          rel="stylesheet"
+          href="https://unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.css"
+        />
+
+
+<style>
+    [v-cloak] {
+        display: none;
+    }
+</style>
+<body>
+
+<nav class="level pt-6 pl-4">
+  <div class="level-left">
+    {% block menu %}{% endblock %}
+  </div>
+</nav>
+
+<section id="app" class="section" v-cloak>
+  {% block app %}{% endblock %}
+</section>
+
+<script src="//polyfill.io/v3/polyfill.min.js?features=es2015%2CIntersectionObserver" crossorigin="anonymous"></script>
+<script src="//unpkg.com/vue@latest/dist/vue.min.js"></script>
+<script src="//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.min.js"></script>
+<script src="//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue-icons.min.js"></script>
+
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+{% block js %}{% endblock %}
+
+</body>
+</html>

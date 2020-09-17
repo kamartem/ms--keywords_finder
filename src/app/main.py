@@ -43,18 +43,26 @@ class TextArea(BaseModel):
 async def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
+@app.get('/add/')
+async def home(request: Request):
+    return templates.TemplateResponse("add.html", {"request": request})
+
+@app.get('/results/')
+async def home(request: Request):
+    return templates.TemplateResponse("results.html", {"request": request})
+
 
 async def background_task():
     logger.info('test')
 
 
-@app.get("/tasks/", response_model=List[schemas.Task])
+@app.get("/api/tasks/", response_model=List[schemas.Task])
 def read_tasks(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     tasks = crud.get_tasks(db, skip=skip, limit=limit)
     return tasks
 
 
-@app.post('/tasks/add/')
+@app.post('/api/tasks/add/')
 async def add_task(data: TextArea, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     data = data.dict()
 

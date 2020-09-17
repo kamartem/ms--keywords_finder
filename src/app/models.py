@@ -1,4 +1,6 @@
-from sqlalchemy import ARRAY, Column, ForeignKey, Integer, String, Boolean
+import datetime
+
+from sqlalchemy import ARRAY, Boolean, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -9,6 +11,7 @@ class Task(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     keywords = Column(ARRAY(String))
+    created_date = Column(DateTime, default=datetime.datetime.utcnow)
 
     resources = relationship('Resource', back_populates='task')
 
