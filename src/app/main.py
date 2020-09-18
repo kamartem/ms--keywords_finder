@@ -1,5 +1,6 @@
-import concurrent.futures
 import logging
+import threading
+import time
 from typing import List
 
 import requests
@@ -18,7 +19,9 @@ templates = Jinja2Templates(directory='app/templates')
 
 logger: logging.Logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-MAX_THREADS = 30
+MAX_THREADS = 50
+
+lock = threading.Lock()
 
 if not logger.hasHandlers():
     sh = logging.StreamHandler()
@@ -38,33 +41,67 @@ def get_db():
 
 
 def download_url(url):
-    logger.info(f"current url: {url}")
-    resp = requests.get(f'http://{url}')
+    try:
+        resp = requests.get(f'http://{url}', timeout=30)
+    except:
+        resp = None
     return resp
 
 
-def find_resource_items(resource_url):
-    content = download_url(resource_url)
+def prepare_resources():
+    db: Session = next(get_db(), None)
+    resources = db.query(Resource).filter(Resource.done == False).limit(25)
+    return ('find_resource_items', resources) if resources.count() else (None, None)
 
 
-def find_keywords(url, keywords):
-    content = download_url(url)
+def prepare_resource_items():
+    db: Session = next(get_db(), None)
+    resource_items = db.query(ResourceItem).filter(ResourceItem.done == False).limit(25)
+    return ('find_keywords', resource_items) if resource_items.count() else (None, None)
 
 
-def process(urls):
-    threads = min(MAX_THREADS, len(urls))
+class Scrapper:
+    def find_resource_items(self, resource_id: int):
+        db = SessionLocal()
+        db.begin()
+        x = db.query(Resource).get(resource_id)
+        x.done = True
+        db.commit()
+        db.close()
 
-    if threads:
-        with concurrent.futures.ThreadPoolExecutor(max_workers=threads) as executor:
-            executor.map(find_resource_items, urls)
+    def find_keywords(self, resource_item_id: int):
+        db = SessionLocal()
+        db.begin()
+        # content = download_url(resource_item.url)
+        resource_item = db.query(ResourceItem).get(resource_item_id)
+        resource_item.done = True
+        db.commit()
+        db.close()
 
 
-def process2(urls):
-    threads = min(MAX_THREADS, len(urls))
+def call_method(class_name, method_name, *params):
+    return getattr(class_name, method_name)(*params)
 
-    if threads:
-        with concurrent.futures.ThreadPoolExecutor(max_workers=threads) as executor:
-            executor.map(find_keywords, urls)
+
+
+
+
+def process():
+    while True:
+        (func_name, items) = prepare_resources() or prepare_resource_items() or (None, [])
+        items_count = items.count() if items else 0
+        if items_count:
+            if threading.active_count() <= 25:
+                for item in items:
+                    with lock:
+                        t = threading.Thread(target=call_method, args=(Scrapper(), func_name, item))
+                        t.start()
+            else:
+                logger.info("small sleep")
+                time.sleep(5)
+        else:
+            logger.info("big sleep")
+            time.sleep(60)
 
 
 class TextArea(BaseModel):
@@ -85,20 +122,6 @@ async def home(request: Request):
 @app.get('/results/')
 async def home(request: Request):
     return templates.TemplateResponse("results.html", {"request": request})
-
-
-async def background_task(task_id: int):
-    session = Session(engine)
-    resources = session.query(Resource).filter(Resource.done == False, Resource.task_id == task_id)
-    process([resource.url for resource in resources])
-
-    logger.info("End find resource items")
-
-    resource_items = session.query(ResourceItem).join(Resource).join(Resource.task).filter(ResourceItem.done == False,
-                                                        Resource.task_id == task_id)
-    process2([(resource_item.url, resource_item.task.keywords) for resource_item in resource_items])
-
-    logger.info("End find keywords")
 
 
 @app.delete("/api/tasks/delete/")
@@ -129,6 +152,7 @@ async def add_task(data: TextArea, background_tasks: BackgroundTasks, db: Sessio
         resource = schemas.ResourceCreate(url=url)
         crud.create_resource(db=db, resource=resource, task_id=task.id)
 
-    background_tasks.add_task(background_task, task_id=task.id)
-
     return {'task_id': task.id}
+
+
+process()
