@@ -1,6 +1,6 @@
+import asyncio
 import logging
 import threading
-import time
 from typing import List
 
 import requests
@@ -83,10 +83,7 @@ def call_method(class_name, method_name, *params):
     return getattr(class_name, method_name)(*params)
 
 
-
-
-
-def process():
+async def process():
     while True:
         (func_name, items) = prepare_resources() or prepare_resource_items() or (None, [])
         items_count = items.count() if items else 0
@@ -98,10 +95,10 @@ def process():
                         t.start()
             else:
                 logger.info("small sleep")
-                time.sleep(5)
+                await asyncio.sleep(60)
         else:
             logger.info("big sleep")
-            time.sleep(60)
+            await asyncio.sleep(5)
 
 
 class TextArea(BaseModel):
@@ -155,4 +152,7 @@ async def add_task(data: TextArea, background_tasks: BackgroundTasks, db: Sessio
     return {'task_id': task.id}
 
 
-process()
+@app.on_event("startup")
+async def startup_event():
+    loop = asyncio.get_event_loop()
+    loop.create_task(process())
