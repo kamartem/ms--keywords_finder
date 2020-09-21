@@ -10,6 +10,6 @@ PORT = '5432'
 DB_NAME = 'keywords_finder'
 engine = create_engine(f'postgresql://{USER}:{PASSWORD}@{HOST}:{PORT}/{DB_NAME }')
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+SessionLocal = sessionmaker(autocommit=True, autoflush=True, bind=engine)
 
 Base = declarative_base()
