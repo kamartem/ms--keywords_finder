@@ -3,15 +3,19 @@ from typing import List
 from pydantic import BaseModel
 
 
-class TaskBase(BaseModel):
+class TaskBaseSchema(BaseModel):
     keywords: List[str] = None
 
 
-class TaskCreate(TaskBase):
+class TaskCreateSchema(TaskBaseSchema):
     pass
 
 
-class Task(TaskBase):
+class TaskUpdateSchema(TaskBaseSchema):
+    pass
+
+
+class TaskDBSchema(TaskBaseSchema):
     id: int
     resources: List
 

@@ -10,11 +10,11 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR)
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
-from app.settings import ALEMBIC_CONFIG
+from app.core.config import ALEMBIC_CONFIG
 
 ######################## --- MODELS FOR MIGRATIONS --- ########################
 
-from app.application import db
+from app.core import db
 
 ###############################################################################
 

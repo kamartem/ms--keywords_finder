@@ -5,11 +5,9 @@ import threading
 import requests
 from fastapi import FastAPI
 from fastapi.templating import Jinja2Templates
-from sqlalchemy.orm import Session
 
-from app.database import SessionLocal
-# from app.models import Resource, ResourceItem
-from app.routes.tasks import router as task_router
+from app.apps.keywords.models.orm.resource import Resource
+from app.apps.keywords.models.orm.resource_item import ResourceItem
 
 app = FastAPI()
 templates = Jinja2Templates(directory='app/templates')
@@ -18,6 +16,8 @@ logger: logging.Logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 lock = threading.Lock()
+
+
 def download_url(url):
     try:
         resp = requests.get(f'http://{url}', timeout=30)
@@ -28,6 +28,8 @@ def download_url(url):
 
 def prepare_resources():
     pass
+
+
 #     db: Session = next(get_db(), None)
 #     resources = db.query(Resource).filter(Resource.done == False).limit(25)
 #     return ('find_resource_items', resources) if resources.count() else (None, None)
@@ -35,6 +37,8 @@ def prepare_resources():
 #
 def prepare_resource_items():
     pass
+
+
 #     db: Session = next(get_db(), None)
 #     resource_items = db.query(ResourceItem).filter(ResourceItem.done == False).limit(25)
 #     return ('find_keywords', resource_items) if resource_items.count() else (None, None)

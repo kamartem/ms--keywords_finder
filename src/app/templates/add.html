@@ -63,7 +63,7 @@
         },
         addText() {
           console.log(this.urls)
-          return axios.post("/api/tasks/add", {
+          return axios.post("/api/tasks/", {
             urls: this.form.urls,
             keywords: this.form.keywords
           }, {
