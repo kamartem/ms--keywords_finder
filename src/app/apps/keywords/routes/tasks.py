@@ -20,13 +20,13 @@ async def create_task(task: TaskCreateSchema, task_service: TaskService = Depend
 
 @router.get('/', response_model=List[TaskDBSchema])
 async def list_tasks(task_service: TaskService = Depends(get_task_services)) -> List[TaskDBSchema]:
-    tasks: List[TaskDBSchema] = await task_service.list_users()
+    tasks: List[TaskDBSchema] = await task_service.list_tasks()
     return tasks
 
 
 @router.get("/{task_id}", response_model=TaskDBSchema)
-async def get_user_by_id(task_id: int, task_service: TaskService = Depends(get_task_services)) -> Optional[TaskDBSchema]:
-    task = await task_service.get_user_by_id(task_id)
+async def get_task_by_id(task_id: int, task_service: TaskService = Depends(get_task_services)) -> Optional[TaskDBSchema]:
+    task = await task_service.get_task_by_id(task_id)
     if task:
         return task
     raise HTTPException(

@@ -18,18 +18,18 @@ class Task(db.Model):
 
 
 class TaskQueries:
-    async def create_task(self, user: TaskCreateSchema) -> Task:
-        return await Task.create(**user.__dict__)
+    async def create_task(self, task: TaskCreateSchema) -> Task:
+        return await Task.create(**task.__dict__)
 
-    async def update_user(self, old_user: Task, new_user: TaskUpdateSchema) -> Task:
-        user_updated = await old_user.update(**new_user.__dict__).apply()
-        return user_updated._instance
+    async def update_task(self, old_task: Task, new_task: TaskUpdateSchema) -> Task:
+        task_updated = await old_task.update(**new_task.__dict__).apply()
+        return task_updated._instance
 
-    async def delete_user(self, user_id: int) -> Task:
-        return await Task.get(user_id).delete()
+    async def delete_task(self, task_id: int) -> Task:
+        return await Task.get(task_id).delete()
 
-    async def get_user_byid(self, user_id: int) -> Task:
-        return await Task.get(user_id)
+    async def get_task_by_id(self, task_id: int) -> Task:
+        return await Task.get(task_id)
 
-    async def get_all_users(self) -> List[Task]:
+    async def get_all_tasks(self) -> List[Task]:
         return await Task.query.gino.all()
