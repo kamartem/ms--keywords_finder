@@ -7,8 +7,7 @@ pyexcelerate==0.9.0
 lxml==4.5.2
 pydantic==1.6.1
 python-multipart==0.0.5
-sqlalchemy==1.3.19
-alembic==1.4.3
-gino[starlette]==1.1.0b1
 sentry_sdk==0.17.6
 asyncpg==0.21.0
+tortoise-orm==0.16.16
+aerich==0.2.4
