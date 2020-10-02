@@ -2,10 +2,14 @@ import logging
 from typing import List
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
+from starlette.background import BackgroundTasks
 from tortoise.contrib.fastapi import HTTPNotFoundError
 
-from keywords.models.task import Task, Task_Pydantic
+from app.keywords.models import Resource
+from app.keywords.models.task import Task, Task_Pydantic
+from app.keywords.serializers.form import TextAreaTask
+from app.worker import celery_app
 
 router = APIRouter()
 LOG = logging.getLogger(__name__)
@@ -15,8 +19,14 @@ class Status(BaseModel):
     message: str
 
 
+def background_on_message(task):
+    LOG.error(task.id)
+
+
 @router.get('/', response_model=List[Task_Pydantic])
-async def list_tasks():
+async def list_tasks(background_task: BackgroundTasks):
+    task = celery_app.send_task("app.keywords.tasks.test_celery", args=[123])
+    background_task.add_task(background_on_message, task)
     return await Task_Pydantic.from_queryset(Task.all())
 
 
@@ -26,8 +36,21 @@ async def get_task_by_id(task_id: int):
 
 
 @router.post("/", response_model=Task_Pydantic)
-async def create_task(task: Task_Pydantic):
-    task_obj = await Task.create(**task.dict(exclude_unset=True))
+async def create_task(data: TextAreaTask):
+    data = dict(data)
+    urls = data.pop('urls').lower().splitlines()
+
+    try:
+        keywords = data['keywords'].lower().splitlines()
+        keywords = [keyword for keyword in keywords if keyword]
+        task_obj = await Task.create(keywords=keywords)
+
+        for url in urls:
+            resource_obj = await Resource.create(task=task_obj, url=url)
+
+    except ValidationError as e:
+        print(e)
+
     return await Task_Pydantic.from_tortoise_orm(task_obj)
 
 

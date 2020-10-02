@@ -6,7 +6,7 @@ class Resource(models.Model):
     id = fields.IntField(pk=True)
     url = fields.CharField(max_length=255)
     done = fields.data.BooleanField(default=False)
-    keywords_found = fields.data.JSONField()
+    keywords_found = fields.data.JSONField(default={})
     task = fields.relational.ForeignKeyField('keywords.Task')
 
     # resource_items = relationship('ResourceItem', back_populates='resource')

@@ -17,6 +17,18 @@ services:
     depends_on:
       - postgres
 
+#  celery_worker:
+#    restart: unless-stopped
+#    build:
+#      dockerfile: Dockerfile
+#      context: .
+#    command: celery -A app.worker.celery_app worker -c 2 --loglevel=INFO -Q test-queue
+#    env_file:
+#      - .env.sample
+#      - .env
+#    depends_on:
+#      - postgres
+
   postgres:
     image: postgres:12.4-alpine
     restart: unless-stopped
@@ -26,3 +38,8 @@ services:
       - .env
     volumes:
       - postgres_data:/var/lib/postgresql/data
+
+#  redis:
+#    image: "redis:alpine"
+#    ports:
+#      - "6379:6379"

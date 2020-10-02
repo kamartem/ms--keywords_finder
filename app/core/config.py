@@ -25,7 +25,7 @@ TORTOISE_ORM = {
     'connections': {'default': DATABASE_URI},
     'apps': {
         'keywords': {
-            'models': ['keywords.models', 'aerich.models'],
+            'models': ['app.keywords.models', 'aerich.models'],
             'default_connection': 'default',
         },
     },

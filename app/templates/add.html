@@ -72,7 +72,7 @@
             }
           }).then((response) => {
             console.log(response.data)
-            this.taskId = response.data['task_id'];
+            this.taskId = response.data['id'];
             this.showSubmitFeedback = true;
             setTimeout(() => {
               this.showSubmitFeedback = false;

@@ -1,11 +1,14 @@
+import asyncio
 import logging
 
+import nest_asyncio
 from fastapi import FastAPI
 from tortoise.contrib.fastapi import register_tortoise
 
-from keywords.routes import keywords_router
-from keywords.routes.html import router as html_router
-from core.config import TORTOISE_ORM
+from app.core.config import TORTOISE_ORM
+from app.keywords.routes import keywords_router
+from app.keywords.routes.html import router as html_router
+from app.keywords.tasks import process
 
 LOG = logging.getLogger(__name__)
 
@@ -34,16 +37,18 @@ def create_app() -> FastAPI:
         # )
     except Exception as e:
         LOG.error(f"Error in fast-API app initialisation => {e}")
-    LOG.info(app)
     return app
 
 
 app = create_app()
+nest_asyncio.apply()
 
 
 @app.on_event("startup")
 async def startup_event():
-    LOG.info("Starting up...")
+    LOG.error("Starting up...")
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(process(loop))
 
 
 @app.on_event("shutdown")

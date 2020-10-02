@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
 
-class TextArea(BaseModel):
+class TextAreaTask(BaseModel):
     urls: str
     keywords: str
