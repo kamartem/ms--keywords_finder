@@ -1,6 +1,6 @@
-from app.keywords.models.resource import *
-from app.keywords.models.resource_item import *
-from app.keywords.models.task import *
+from app.keywords.models.resource import Resource
+from app.keywords.models.resource_item import ResourceItem
+from app.keywords.models.task import Task
 
 from tortoise import Model, fields
 

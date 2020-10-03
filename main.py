@@ -48,7 +48,7 @@ nest_asyncio.apply()
 async def startup_event():
     LOG.error("Starting up...")
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(process(loop))
+    loop.create_task(process(loop))
 
 
 @app.on_event("shutdown")

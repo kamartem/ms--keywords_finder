@@ -2,14 +2,16 @@ import logging
 from typing import List
 
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, ValidationError
-from starlette.background import BackgroundTasks
+from pyexcelerate import Workbook
 from tortoise.contrib.fastapi import HTTPNotFoundError
 
-from app.keywords.models import Resource
+from app.keywords.models import Resource, ResourceItem
+from app.keywords.models.resource import Resource_Pydantic
+from app.keywords.models.resource_item import ResourceItem_Pydantic
 from app.keywords.models.task import Task, Task_Pydantic
 from app.keywords.serializers.form import TextAreaTask
-from app.worker import celery_app
 
 router = APIRouter()
 LOG = logging.getLogger(__name__)
@@ -24,9 +26,7 @@ def background_on_message(task):
 
 
 @router.get('/', response_model=List[Task_Pydantic])
-async def list_tasks(background_task: BackgroundTasks):
-    task = celery_app.send_task("app.keywords.tasks.test_celery", args=[123])
-    background_task.add_task(background_on_message, task)
+async def list_tasks():
     return await Task_Pydantic.from_queryset(Task.all())
 
 
@@ -46,6 +46,7 @@ async def create_task(data: TextAreaTask):
         task_obj = await Task.create(keywords=keywords)
 
         for url in urls:
+            url = f'http://{url}' if 'http' not in url else url
             resource_obj = await Resource.create(task=task_obj, url=url)
 
     except ValidationError as e:
@@ -60,3 +61,24 @@ async def delete_user(task_id: int):
     if not deleted_count:
         raise HTTPException(status_code=404, detail=f"User {task_id} not found")
     return Status(message=f"Deleted task {task_id}")
+
+
+@router.get('/report/', response_class=StreamingResponse)
+async def report(task_id: int):
+    task = await Task.filter(id=task_id).first()
+    resources = await Resource_Pydantic.from_queryset(Resource.filter(task_id=task.id))
+    result = [['Ссылка', 'Найденные ключевые слова', 'Были ли проблемы']]
+
+    for resource in resources:
+        keywords = []
+        problem = resource.had_error
+        resource_items = await ResourceItem_Pydantic.from_queryset(ResourceItem.filter(resource_id=resource.id))
+        for resource_item in resource_items:
+            keywords.extend(resource_item.keywords_found)
+            problem = problem or resource_item.had_error
+        result.append([resource.url, ', '.join(str(s) for s in set(keywords)), 'Да' if problem else 'Нет'])
+
+    wb = Workbook()
+    wb.new_sheet("sheet name", data=result)
+    wb.save('/tmp/result.xlsx')
+    return FileResponse('/tmp/result.xlsx')

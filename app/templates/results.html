@@ -7,7 +7,11 @@
 
 {% block app %}
   <h1 class="title is-1">Просмотр результатов</h1>
-  <b-table show-empty :items="items" :fields="fields" :current-page="currentPage" :per-page="0"></b-table>
+  <b-table show-empty :items="items" :fields="fields" :current-page="currentPage" :per-page="0">
+      <template v-slot:cell(download)="{item, value}">
+          <b-link :href="'/api/tasks/report/?task_id=' + item.id">Скачать</b-link>
+    </template>
+  </b-table>
   <b-pagination size="md" :total-rows="totalItems" v-model="currentPage" :per-page="perPage"></b-pagination>
 {% endblock %}
 
@@ -15,9 +19,10 @@
   <script>
     new Vue({
       el: '#app',
+            delimiters: ['[[', ']]'],
+
       data() {
         return {
-          animals: [],
           items: [],
           fields: [
             {
@@ -27,7 +32,11 @@
             {
               key: 'keywords',
               label: 'Keywords'
-            }
+            },
+            {
+              key: 'download',
+              label: 'Download'
+            },
           ],
           currentPage: 0,
           perPage: 100,
