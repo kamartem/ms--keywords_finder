@@ -1,5 +1,0 @@
-{
-  "upgrade": [
-    "CREATE TABLE IF NOT EXISTS \"tasks\" (\n    \"id\" SERIAL NOT NULL PRIMARY KEY,\n    \"keywords\" JSONB NOT NULL,\n    \"created_date\" TIMESTAMP NOT NULL  DEFAULT CURRENT_TIMESTAMP\n);\nCREATE TABLE IF NOT EXISTS \"resource\" (\n    \"id\" SERIAL NOT NULL PRIMARY KEY,\n    \"url\" VARCHAR(255) NOT NULL,\n    \"done\" BOOL NOT NULL  DEFAULT False,\n    \"keywords_found\" JSONB NOT NULL,\n    \"had_error\" BOOL NOT NULL  DEFAULT False,\n    \"task_id\" INT NOT NULL REFERENCES \"tasks\" (\"id\") ON DELETE CASCADE\n);\nCREATE TABLE IF NOT EXISTS \"resourceitem\" (\n    \"id\" SERIAL NOT NULL PRIMARY KEY,\n    \"url\" VARCHAR(255) NOT NULL,\n    \"done\" BOOL NOT NULL  DEFAULT False,\n    \"keywords_found\" JSONB NOT NULL,\n    \"had_error\" BOOL NOT NULL  DEFAULT False,\n    \"resource_id\" INT NOT NULL REFERENCES \"resource\" (\"id\") ON DELETE CASCADE\n);\nCREATE TABLE IF NOT EXISTS \"aerich\" (\n    \"id\" SERIAL NOT NULL PRIMARY KEY,\n    \"version\" VARCHAR(255) NOT NULL,\n    \"app\" VARCHAR(20) NOT NULL\n);"
-  ]
-}

@@ -6,35 +6,39 @@ from urllib.parse import urlparse
 import aiohttp
 from bs4 import BeautifulSoup
 
-from app.keywords.models.resource import Resource, Resource_Pydantic
-from app.keywords.models.resource_item import ResourceItem, ResourceItem_Pydantic
+from app.keywords.models import Resource, ResourceItem, ResourceItem_Pydantic, Resource_Pydantic
 
 LOG = logging.getLogger(__name__)
+LOG.setLevel(logging.INFO)
+BAD_EXTENSIONS = ['jpg', 'png', 'jpeg', 'gif', 'svg', 'css', 'js', 'xml', 'ico', 'xls', 'xlsx']
+BAD_EXTENSIONS = [f'.{ext}' for ext in BAD_EXTENSIONS]
 
 
 async def get_resource_items(session, resource_id, count=5):
     resource_qs = Resource.filter(id=resource_id).first()
     resource_obj = await resource_qs
-    resource_ped = await Resource_Pydantic.from_queryset_single(resource_qs)
-    parsed_uri = urlparse(resource_ped.url)
+    resource_pyd = await Resource_Pydantic.from_queryset_single(resource_qs)
+    parsed_uri = urlparse(resource_pyd.url)
+    scheme = parsed_uri.scheme if parsed_uri.scheme else 'http'
     domain = parsed_uri.netloc
+    resource_url = f'{scheme}://{domain}'
 
     try:
-        async with session.get(f'http://{domain}') as ans:
+        async with session.get(resource_url) as ans:
             content = await ans.text()
-
+            result = []
             soup = BeautifulSoup(content, features="lxml")
-            hrefs = [
-                f'http://{domain}{link["href"] if link["href"].startswith("/") else "/" + link["href"]}'
-                for link in soup.find_all(
-                    "a", href=lambda x: x and not x.startswith('http') and ':' not in x and not x.startswith('#'))
-            ]
-            hrefs2 = [
-                link["href"] for link in soup.find_all("a", href=lambda x: x and domain in x and 'mailto' not in x)
-            ]
-            result = [f'http://{domain}'] + hrefs + hrefs2
+            links = [a.get('href') for a in soup.find_all('a', href=True)]
+            for link in links:
+                parsed = urlparse(link)
+                LOG.error(f'{domain}, {parsed.netloc}, {link}')
+                if domain in parsed.netloc and all(x not in link[-20:] for x in BAD_EXTENSIONS):
+                    proto = parsed.scheme if parsed.scheme else 'http'
+                    result.append(f'{proto}://{parsed.netloc}{parsed.path}')
+            LOG.error(result)
             c = Counter(result)
-            data = list(set([domain[0] for domain in c.most_common(count)]))
+            data = list(set([url[0] for url in c.most_common(count)]))
+            data.append(resource_url)
 
             for el in data:
                 await ResourceItem.create(resource_id=resource_id, url=el)
@@ -43,6 +47,7 @@ async def get_resource_items(session, resource_id, count=5):
 
     except Exception as e:
         resource_obj.had_error = True
+        resource_obj.error_reason = e
         LOG.error(e)
 
     resource_obj.done = True
@@ -67,14 +72,11 @@ async def find_keywords(session, resource_item_id):
             resource_item_obj.had_error = False
     except Exception as e:
         resource_item_obj.had_error = True
+        resource_item_obj.error_reason = e
         LOG.error(e)
 
     resource_item_obj.done = True
     await resource_item_obj.save()
-
-
-def call_method(class_name, method_name, *params):
-    return getattr(class_name, method_name)(*params)
 
 
 async def process(loop):
@@ -85,24 +87,25 @@ async def process(loop):
             tasks_count = len(asyncio.all_tasks())
 
             if tasks_count <= 30:
-                resources = await Resource_Pydantic.from_queryset(Resource.filter(done=False).limit(30))
+                resources = await Resource_Pydantic.from_queryset(Resource.filter(done=False).limit(20))
                 for resource in resources:
                     await loop.create_task(get_resource_items(session, resource.id))
             tasks_count = len(asyncio.all_tasks())
             if tasks_count <= 30:
-                resource_items = await ResourceItem_Pydantic.from_queryset(ResourceItem.filter(done=False).limit(40))
+                resource_items = await ResourceItem_Pydantic.from_queryset(ResourceItem.filter(done=False).limit(20))
                 for resource_item in resource_items:
                     await loop.create_task(find_keywords(session, resource_item.id))
 
             tasks_count = len(asyncio.all_tasks())
             if tasks_count <= 3:
-                sleep_time = 10
-            elif tasks_count <= 10:
+                sleep_time = 30
+            elif tasks_count <= 8:
                 sleep_time = 15
+            elif tasks_count <= 10:
+                sleep_time = 10
             elif tasks_count <= 30:
                 sleep_time = 5
             else:
-                sleep_time = 3
+                sleep_time = 10
 
-            LOG.error(f"Sleeping for {sleep_time}")
             await asyncio.sleep(sleep_time)

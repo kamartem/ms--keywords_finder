@@ -7,10 +7,7 @@ from pydantic import BaseModel, ValidationError
 from pyexcelerate import Workbook
 from tortoise.contrib.fastapi import HTTPNotFoundError
 
-from app.keywords.models import Resource, ResourceItem
-from app.keywords.models.resource import Resource_Pydantic
-from app.keywords.models.resource_item import ResourceItem_Pydantic
-from app.keywords.models.task import Task, Task_Pydantic
+from app.keywords.models import Resource, ResourceItem, ResourceItem_Pydantic, Resource_Pydantic, Task, Task_Pydantic
 from app.keywords.serializers.form import TextAreaTask
 
 router = APIRouter()
