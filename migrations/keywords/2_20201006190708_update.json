@@ -1,0 +1,11 @@
+{
+  "upgrade": [
+    "ALTER TABLE \"resource\" RENAME COLUMN \"done\" TO \"done_http\"",
+    "ALTER TABLE \"resourceitem\" RENAME COLUMN \"done\" TO \"done_http\"",
+    "ALTER TABLE \"resourceitem\" ADD \"done_https\" BOOL NOT NULL  DEFAULT False"
+  ],
+  "downgrade": [
+    "ALTER TABLE \"resource\" RENAME COLUMN \"done_http\" TO \"done\"",
+    "ALTER TABLE \"resourceitem\" RENAME COLUMN \"done_http\" TO \"done\""
+  ]
+}

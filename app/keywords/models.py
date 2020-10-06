@@ -15,7 +15,8 @@ class Task(models.Model):
 class Resource(models.Model):
     id = fields.IntField(pk=True)
     url = fields.CharField(max_length=255)
-    done = fields.data.BooleanField(default=False)
+    done_http = fields.data.BooleanField(default=False)
+    done_https = fields.data.BooleanField(default=False)
     keywords_found = fields.data.JSONField(default=[])
     task = fields.relational.ForeignKeyField('keywords.Task')
     had_error = fields.data.BooleanField(default=False)
@@ -27,7 +28,8 @@ class Resource(models.Model):
 class ResourceItem(models.Model):
     id = fields.IntField(pk=True)
     url = fields.CharField(max_length=255)
-    done = fields.data.BooleanField(default=False)
+    done_http = fields.data.BooleanField(default=False)
+    done_https = fields.data.BooleanField(default=False)
     keywords_found = fields.data.JSONField(default=[])
     resource = fields.relational.ForeignKeyField('keywords.Resource')
     had_error = fields.data.BooleanField(default=False)

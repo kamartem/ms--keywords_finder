@@ -5,6 +5,7 @@ from urllib.parse import urlparse
 
 import aiohttp
 from bs4 import BeautifulSoup
+from tortoise.query_utils import Q
 
 from app.keywords.models import Resource, ResourceItem, ResourceItem_Pydantic, Resource_Pydantic
 
@@ -86,12 +87,14 @@ async def process(loop):
             tasks_count = len(asyncio.all_tasks())
 
             if tasks_count <= 30:
-                resources = await Resource_Pydantic.from_queryset(Resource.filter(done=False).limit(20))
+                resources = await Resource_Pydantic.from_queryset(
+                    Resource.filter(Q(Q(done_http=False), Q(done_https=True), join_type="AND")).limit(20))
                 for resource in resources:
                     await loop.create_task(get_resource_items(session, resource.id))
             tasks_count = len(asyncio.all_tasks())
             if tasks_count <= 30:
-                resource_items = await ResourceItem_Pydantic.from_queryset(ResourceItem.filter(done=False).limit(20))
+                resource_items = await ResourceItem_Pydantic.from_queryset(
+                    ResourceItem.filter(Q(Q(done_http=False), Q(done_https=True), join_type="AND")).limit(20))
                 for resource_item in resource_items:
                     await loop.create_task(find_keywords(session, resource_item.id))
 
