@@ -25,17 +25,15 @@ async def get_resource_items(session, resource_id, count=5):
 
     try:
         async with session.get(resource_url) as ans:
-            content = await ans.text()
+            content = await ans.text(errors='replace')
             result = []
             soup = BeautifulSoup(content, features="lxml")
             links = [a.get('href') for a in soup.find_all('a', href=True)]
             for link in links:
                 parsed = urlparse(link)
-                LOG.error(f'{domain}, {parsed.netloc}, {link}')
                 if domain in parsed.netloc and all(x not in link[-20:] for x in BAD_EXTENSIONS):
                     proto = parsed.scheme if parsed.scheme else 'http'
                     result.append(f'{proto}://{parsed.netloc}{parsed.path}')
-            LOG.error(result)
             c = Counter(result)
             data = list(set([url[0] for url in c.most_common(count)]))
             data.append(resource_url)
@@ -44,7 +42,6 @@ async def get_resource_items(session, resource_id, count=5):
                 await ResourceItem.create(resource_id=resource_id, url=el)
 
             resource_obj.had_error = False
-
     except Exception as e:
         resource_obj.had_error = True
         resource_obj.error_reason = e
@@ -65,8 +62,8 @@ async def find_keywords(session, resource_item_id):
 
     try:
         async with session.get(url) as ans:
-            content = await ans.text()
-            kwds = [kw for kw in keywords_to_found if kw in content]
+            content = (await ans.text(errors='replace')).lower()
+            kwds = [kw for kw in keywords_to_found if kw.lower() in content]
             if len(kwds) > 0:
                 resource_item_obj.keywords_found = kwds
             resource_item_obj.had_error = False
@@ -81,7 +78,9 @@ async def find_keywords(session, resource_item_id):
 
 async def process(loop):
     timeout = aiohttp.ClientTimeout(total=15)
-    async with aiohttp.ClientSession(timeout=timeout, connector=aiohttp.TCPConnector(verify_ssl=False),
+    async with aiohttp.ClientSession(headers={'Connection': 'keep-alive'},
+                                     timeout=timeout,
+                                     connector=aiohttp.TCPConnector(verify_ssl=False),
                                      loop=loop) as session:
         while True:
             tasks_count = len(asyncio.all_tasks())
