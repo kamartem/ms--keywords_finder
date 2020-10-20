@@ -74,11 +74,11 @@ async def report(task_id: int):
 
     for resource in resources:
         keywords = []
-        problem = resource.had_error
+        problem = resource.error_https or resource.error_http
         resource_items = await ResourceItem_Pydantic.from_queryset(ResourceItem.filter(resource_id=resource.id))
         for resource_item in resource_items:
             keywords.extend(resource_item.keywords_found)
-            problem = problem or resource_item.had_error
+            problem = problem or resource_item.error
         result.append([resource.url, ', '.join(str(s) for s in set(keywords)), 'Да' if problem else 'Нет'])
 
     wb = Workbook()
