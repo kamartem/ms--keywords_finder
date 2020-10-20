@@ -79,7 +79,7 @@ async def report(task_id: int):
         for resource_item in resource_items:
             keywords.extend(resource_item.keywords_found)
             problem = problem or resource_item.error
-        result.append([resource.url, ', '.join(str(s) for s in set(keywords)), 'Да' if problem else 'Нет'])
+        result.append([resource.domain, ', '.join(str(s) for s in set(keywords)), 'Да' if problem else 'Нет'])
 
     wb = Workbook()
     wb.new_sheet("sheet name", data=result)
