@@ -1,5 +1,7 @@
+import itertools
 import logging
 from typing import List
+from urllib.parse import urlparse
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse, StreamingResponse
@@ -35,19 +37,23 @@ async def get_task_by_id(task_id: int):
 @router.post("/", response_model=Task_Pydantic)
 async def create_task(data: TextAreaTask):
     data = dict(data)
-    urls = data.pop('urls').lower().splitlines()
+    urls_2d = [line.split() for line in data.pop('urls').lower().splitlines() if line]  # multiple urls in one line
+    urls = list(itertools.chain(*urls_2d))
 
     try:
         keywords = data['keywords'].lower().splitlines()
         keywords = [keyword for keyword in keywords if keyword]
         task_obj = await Task.create(keywords=keywords)
-
+        LOG.error(task_obj)
         for url in urls:
-            url = f'http://{url}' if 'http' not in url else url
-            resource_obj = await Resource.create(task=task_obj, url=url)
+            if '//' not in url:
+                url = f'https://{url}'
+            parsed_uri = urlparse(url)
+            LOG.error(parsed_uri)
+            resource_obj = await Resource.create(task=task_obj, domain=parsed_uri.netloc)
 
     except ValidationError as e:
-        print(e)
+        LOG.error(e)
 
     return await Task_Pydantic.from_tortoise_orm(task_obj)
 

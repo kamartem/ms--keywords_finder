@@ -19,10 +19,8 @@ async def get_resource_items(session, resource_id, count=5):
     resource_qs = Resource.filter(id=resource_id).first()
     resource_obj = await resource_qs
     resource_pyd = await Resource_Pydantic.from_queryset_single(resource_qs)
-    parsed_uri = urlparse(resource_pyd.url)
-    scheme = parsed_uri.scheme if parsed_uri.scheme else 'http'
-    domain = parsed_uri.netloc
-    resource_url = f'{scheme}://{domain}'
+    scheme = 'http' if resource_pyd.done_https else 'https'
+    resource_url = f'{scheme}://{resource_pyd.domain}'
 
     try:
         async with session.get(resource_url) as ans:
@@ -30,10 +28,11 @@ async def get_resource_items(session, resource_id, count=5):
             result = []
             soup = BeautifulSoup(content, features="lxml")
             links = [a.get('href') for a in soup.find_all('a', href=True)]
+
             for link in links:
                 parsed = urlparse(link)
-                if domain in parsed.netloc and all(x not in link[-20:] for x in BAD_EXTENSIONS):
-                    proto = parsed.scheme if parsed.scheme else 'http'
+                if resource_pyd.domain == parsed.netloc and all(x not in link[-20:] for x in BAD_EXTENSIONS):
+                    proto = parsed.scheme if parsed.scheme else scheme
                     result.append(f'{proto}://{parsed.netloc}{parsed.path}')
             c = Counter(result)
             data = list(set([url[0] for url in c.most_common(count)]))
@@ -42,13 +41,17 @@ async def get_resource_items(session, resource_id, count=5):
             for el in data:
                 await ResourceItem.create(resource_id=resource_id, url=el)
 
-            resource_obj.had_error = False
     except Exception as e:
-        resource_obj.had_error = True
-        resource_obj.error_reason = e
-        LOG.error(e)
+        if scheme == 'https':
+            resource_obj.error_https = e
+        else:
+            resource_obj.error_http = e
 
-    resource_obj.done = True
+    if scheme == 'https':
+        resource_obj.done_https = True
+    else:
+        resource_obj.done_http = True
+
     await resource_obj.save()
 
 
@@ -67,34 +70,33 @@ async def find_keywords(session, resource_item_id):
             kwds = [kw for kw in keywords_to_found if kw.lower() in content]
             if len(kwds) > 0:
                 resource_item_obj.keywords_found = kwds
-            resource_item_obj.had_error = False
+
     except Exception as e:
-        resource_item_obj.had_error = True
-        resource_item_obj.error_reason = e
-        LOG.error(e)
+        resource_item_obj.error = e
 
     resource_item_obj.done = True
     await resource_item_obj.save()
 
 
 async def process(loop):
-    timeout = aiohttp.ClientTimeout(total=15)
+    timeout = aiohttp.ClientTimeout(total=5)
     async with aiohttp.ClientSession(headers={'Connection': 'keep-alive'},
                                      timeout=timeout,
                                      connector=aiohttp.TCPConnector(verify_ssl=False),
                                      loop=loop) as session:
         while True:
             tasks_count = len(asyncio.all_tasks())
-
             if tasks_count <= 30:
-                resources = await Resource_Pydantic.from_queryset(
-                    Resource.filter(Q(Q(done_http=False), Q(done_https=True), join_type="AND")).limit(20))
+                qs = Resource.filter(
+                    Q(done_http=False) & Q(done_https=False)
+                    | Q(Q(done_https=True), Q(error_https__isnull=False), Q(done_http=False), join_type='AND')
+                    | Q(Q(done_http=True), Q(error_http__isnull=False), Q(done_https=False), join_type='AND'))
+                resources = await Resource_Pydantic.from_queryset(qs.limit(20))
                 for resource in resources:
                     await loop.create_task(get_resource_items(session, resource.id))
             tasks_count = len(asyncio.all_tasks())
             if tasks_count <= 30:
-                resource_items = await ResourceItem_Pydantic.from_queryset(
-                    ResourceItem.filter(Q(Q(done_http=False), Q(done_https=True), join_type="AND")).limit(20))
+                resource_items = await ResourceItem_Pydantic.from_queryset(ResourceItem.filter(done=False).limit(20))
                 for resource_item in resource_items:
                     await loop.create_task(find_keywords(session, resource_item.id))
 
