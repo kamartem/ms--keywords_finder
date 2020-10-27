@@ -20,10 +20,6 @@ class Status(BaseModel):
     message: str
 
 
-def background_on_message(task):
-    LOG.error(task.id)
-
-
 @router.get('/', response_model=List[Task_Pydantic])
 async def list_tasks():
     return await Task_Pydantic.from_queryset(Task.all())
@@ -44,12 +40,10 @@ async def create_task(data: TextAreaTask):
         keywords = data['keywords'].lower().splitlines()
         keywords = [keyword for keyword in keywords if keyword]
         task_obj = await Task.create(keywords=keywords)
-        LOG.error(task_obj)
         for url in urls:
             if '//' not in url:
                 url = f'https://{url}'
             parsed_uri = urlparse(url)
-            LOG.error(parsed_uri)
             resource_obj = await Resource.create(task=task_obj, domain=parsed_uri.netloc)
 
     except ValidationError as e:
@@ -59,7 +53,7 @@ async def create_task(data: TextAreaTask):
 
 
 @router.delete("/{task_id}", response_model=Task_Pydantic, responses={404: {"model": HTTPNotFoundError}})
-async def delete_user(task_id: int):
+async def delete_task(task_id: int):
     deleted_count = await Task.filter(id=task_id).delete()
     if not deleted_count:
         raise HTTPException(status_code=404, detail=f"User {task_id} not found")

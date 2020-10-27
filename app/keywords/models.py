@@ -22,6 +22,11 @@ class Resource(models.Model):
     error_https = fields.data.TextField(null=True, default=None)
     keywords_found = fields.data.JSONField(default=[])
 
+    def get_current_url(self):
+        scheme = 'http' if self.done_https else 'https'
+        resource_url = f'{scheme}://{self.domain}'
+        return resource_url
+
 
 class ResourceItem(models.Model):
     id = fields.IntField(pk=True)
