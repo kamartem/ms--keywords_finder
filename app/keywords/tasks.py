@@ -5,12 +5,13 @@ from urllib.parse import urlparse
 import aiohttp
 import async_timeout
 from aiologger import Logger
+from aiologger.levels import LogLevel
 from bs4 import BeautifulSoup
 from tortoise.query_utils import Q
 
 from app.keywords.models import Resource, ResourceItem, ResourceItem_Pydantic, Resource_Pydantic
 
-LOG = Logger.with_default_handlers()
+LOG = Logger.with_default_handlers(level=LogLevel.ERROR)
 
 BAD_EXTENSIONS = ['jpg', 'png', 'jpeg', 'gif', 'svg', 'css', 'js', 'xml', 'ico', 'xls', 'xlsx']
 BAD_EXTENSIONS = [f'.{ext}' for ext in BAD_EXTENSIONS]
@@ -137,6 +138,3 @@ async def process(loop):
             if tasks:
                 responses = asyncio.gather(*tasks)
                 await responses
-
-            await LOG.error("sleep")
-            await asyncio.sleep(2)
