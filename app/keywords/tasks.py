@@ -1,4 +1,5 @@
 import asyncio
+import time
 from collections import Counter
 from urllib.parse import urlparse
 
@@ -138,3 +139,5 @@ async def process(loop):
             if tasks:
                 responses = asyncio.gather(*tasks)
                 await responses
+            else:
+                time.sleep(5)
