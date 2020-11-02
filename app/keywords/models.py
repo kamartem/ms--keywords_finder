@@ -25,7 +25,7 @@ class Resource(TimestampMixin, models.Model):
     done_https = fields.data.BooleanField(default=False)
     error_http = fields.data.TextField(null=True, default=None)
     error_https = fields.data.TextField(null=True, default=None)
-    order = fields.BigIntField()
+    order = fields.BigIntField(null=True)
 
     def get_current_url(self):
         scheme = 'http' if self.done_https else 'https'
