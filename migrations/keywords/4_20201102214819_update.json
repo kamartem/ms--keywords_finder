@@ -1,0 +1,8 @@
+{
+  "upgrade": [
+    "ALTER TABLE \"resource\" ADD \"order\" BIGINT NOT NULL"
+  ],
+  "downgrade": [
+    "ALTER TABLE \"resource\" DROP COLUMN \"order\""
+  ]
+}

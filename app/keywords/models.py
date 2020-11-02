@@ -1,6 +1,10 @@
 from tortoise import Tortoise, fields, models
 from tortoise.contrib.pydantic import pydantic_model_creator
 
+class TimestampMixin():
+    created_at = fields.DatetimeField(null=True, auto_now_add=True)
+    modified_at = fields.DatetimeField(null=True, auto_now=True)
+
 
 class Task(models.Model):
     id = fields.IntField(pk=True)
@@ -12,15 +16,16 @@ class Task(models.Model):
         table = 'tasks'
 
 
-class Resource(models.Model):
+class Resource(TimestampMixin, models.Model):
     id = fields.IntField(pk=True)
     domain = fields.CharField(max_length=255)
     task = fields.relational.ForeignKeyField('keywords.Task')
+    done = fields.data.BooleanField(default=False)
     done_http = fields.data.BooleanField(default=False)
     done_https = fields.data.BooleanField(default=False)
     error_http = fields.data.TextField(null=True, default=None)
     error_https = fields.data.TextField(null=True, default=None)
-    keywords_found = fields.data.JSONField(default=[])
+    order = fields.BigIntField()
 
     def get_current_url(self):
         scheme = 'http' if self.done_https else 'https'
@@ -28,7 +33,7 @@ class Resource(models.Model):
         return resource_url
 
 
-class ResourceItem(models.Model):
+class ResourceItem(TimestampMixin, models.Model):
     id = fields.IntField(pk=True)
     url = fields.CharField(max_length=255)
     resource = fields.relational.ForeignKeyField('keywords.Resource')

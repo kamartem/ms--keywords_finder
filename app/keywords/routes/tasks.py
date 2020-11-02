@@ -1,5 +1,7 @@
 import itertools
 import logging
+from itertools import groupby
+from operator import itemgetter
 from typing import List
 from urllib.parse import urlparse
 
@@ -9,7 +11,7 @@ from pydantic import BaseModel, ValidationError
 from pyexcelerate import Workbook
 from tortoise.contrib.fastapi import HTTPNotFoundError
 
-from app.keywords.models import Resource, ResourceItem, ResourceItem_Pydantic, Resource_Pydantic, Task, Task_Pydantic
+from app.keywords.models import Resource, ResourceItem, Task, Task_Pydantic
 from app.keywords.serializers.form import TextAreaTask
 
 router = APIRouter()
@@ -37,14 +39,18 @@ async def create_task(data: TextAreaTask):
     urls = list(itertools.chain(*urls_2d))
 
     try:
+        resources_to_create = []
         keywords = data['keywords'].lower().splitlines()
         keywords = [keyword for keyword in keywords if keyword]
         task_obj = await Task.create(keywords=keywords)
-        for url in urls:
+
+        for idx, url in enumerate(urls):
             if '//' not in url:
                 url = f'https://{url}'
             parsed_uri = urlparse(url)
-            resource_obj = await Resource.create(task=task_obj, domain=parsed_uri.netloc)
+            resources_to_create.append(Resource(task=task_obj, domain=parsed_uri.netloc, order=idx))
+
+        await Resource.bulk_create(resources_to_create)
 
     except ValidationError as e:
         LOG.error(e)
@@ -63,17 +69,27 @@ async def delete_task(task_id: int):
 @router.get('/report/', response_class=StreamingResponse)
 async def report(task_id: int):
     task = await Task.filter(id=task_id).first()
-    resources = await Resource_Pydantic.from_queryset(Resource.filter(task_id=task.id))
     result = [['Ссылка', 'Найденные ключевые слова', 'Были ли проблемы']]
+    resource_items = await ResourceItem.filter(resource__task_id=task.id).order_by('resource__order').values(
+        'resource_id', 'resource__domain', 'resource__error_https', 'resource__error_http', 'keywords_found', 'done',
+        'error')
+    resource_with_grouper = groupby(resource_items, itemgetter('resource_id'))
 
-    for resource in resources:
-        keywords = []
-        problem = resource.error_https or resource.error_http
-        resource_items = await ResourceItem_Pydantic.from_queryset(ResourceItem.filter(resource_id=resource.id))
-        for resource_item in resource_items:
-            keywords.extend(resource_item.keywords_found)
-            problem = problem or resource_item.error
-        result.append([resource.domain, ', '.join(str(s) for s in set(keywords)), 'Да' if problem else 'Нет'])
+    for resource_id, items in resource_with_grouper:
+        keywords = set()
+        problems = set()
+        domain = ''
+
+        for item in items:
+            for x in item['keywords_found']:
+                keywords.add(x)
+            if item['resource__error_https'] and item['resource__error_http']:
+                problems.add(item['resource__error_https'])
+                problems.add(item['resource__error_http'])
+            domain = item['resource__domain']
+        problems.discard(None)
+        result.append(
+            [domain, ', '.join(str(s) for s in keywords), ', '.join(str(e) for e in problems) if problems else 'Нет'])
 
     wb = Workbook()
     wb.new_sheet("sheet name", data=result)

@@ -10,15 +10,6 @@ services:
     volumes:
       - "./:/opt/"
 
-#  celery_worker:
-#    volumes:
-#      - "./src:/opt/app/app/"
-
   postgres:
     ports:
       - "5432:5432"
-
-#  redis:
-#    image: redis:6.0-alpine
-#    ports:
-#      - "6379:6379"
