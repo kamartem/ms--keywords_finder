@@ -7,11 +7,12 @@ import aiohttp
 import async_timeout
 from bs4 import BeautifulSoup
 from tortoise.query_utils import Q
-
+from aiologger import Logger
+from aiologger.levels import LogLevel
 from app.keywords.models import Resource, ResourceItem
 
-# LOG = Logger.with_default_handlers(level=LogLevel.INFO)
-LOG = logging.getLogger(__name__)
+LOG = Logger.with_default_handlers(level=LogLevel.INFO)
+# LOG = logging.getLogger(__name__)
 
 BAD_EXTENSIONS = ['jpg', 'png', 'jpeg', 'gif', 'svg', 'css', 'js', 'xml', 'ico', 'xls', 'xlsx']
 BAD_EXTENSIONS = [f'.{ext}' for ext in BAD_EXTENSIONS]
@@ -24,13 +25,14 @@ async def fetch(session, url):
     LOG.info(f"Try fetch {url}")
 
     try:
-        with async_timeout.timeout(10):
+        with async_timeout.timeout(5):
 
             async with session.get(url, verify_ssl=False) as response:
                 if response.status != 200:
                     error = f"Status: {response.status}, reason: {response.reason}"
                 else:
                     try:
+                        LOG.info(f"Got response {url}")
                         data = await response.text(errors='replace')
                     except Exception as e:
                         error = f"An unicode error: {e}"
@@ -119,7 +121,7 @@ async def process_resource_item(resource_item_obj, sem, session):
 
 
 async def process(loop):
-    sem = asyncio.Semaphore(50)
+    sem = asyncio.Semaphore(10)
 
     connector = aiohttp.TCPConnector(verify_ssl=False)
 
@@ -130,7 +132,7 @@ async def process(loop):
             resources_qs = Resource.filter(
                 Q(done_http=False) & Q(done_https=False)
                 | Q(Q(done_https=True), Q(error_https__isnull=False), Q(done_http=False), join_type='AND')
-                | Q(Q(done_http=True), Q(error_http__isnull=False), Q(done_https=False), join_type='AND')).limit(200)
+                | Q(Q(done_http=True), Q(error_http__isnull=False), Q(done_https=False), join_type='AND')).limit(100)
 
             resources = await resources_qs
             resources_count = await resources_qs.count()
@@ -142,7 +144,7 @@ async def process(loop):
                     task = asyncio.ensure_future(process_resource(resource, sem, session))
                     tasks.append(task)
             else:
-                resource_items_qs = ResourceItem.filter(done=False).limit(200)
+                resource_items_qs = ResourceItem.filter(done=False).limit(100)
                 resource_items = await resource_items_qs
                 resources_items_count = await resource_items_qs.count()
                 LOG.info(f"Got {resources_items_count} resource items")
