@@ -40,7 +40,7 @@ async def fetch(session, url):
         error = f"Possible HTTP/SSL errors {e}"
 
     if error:
-        LOG.error(f"Eror on getting :{url} {error}")
+        LOG.info(f"Eror on getting :{url} {error}")
 
     return error, data
 
@@ -81,7 +81,10 @@ async def process_resource(resource_obj, sem, session):
             data.add(resource_url)
 
         for el in data:
-            await ResourceItem.create(resource_id=resource_obj.id, url=el)
+            try:
+                await ResourceItem.create(resource_id=resource_obj.id, url=el)
+            except Exception as e:
+                LOG.error(e)
 
         resource_obj.done = True
 
@@ -132,7 +135,7 @@ async def process(loop):
             resources = await resources_qs
             resources_count = await resources_qs.count()
 
-            LOG.error(f"Got {resources_count} resources")
+            LOG.info(f"Got {resources_count} resources")
 
             if resources_count > 0:
                 for resource in resources:
@@ -142,7 +145,7 @@ async def process(loop):
                 resource_items_qs = ResourceItem.filter(done=False).limit(200)
                 resource_items = await resource_items_qs
                 resources_items_count = await resource_items_qs.count()
-                LOG.error(f"Got {resources_items_count} resource items")
+                LOG.info(f"Got {resources_items_count} resource items")
 
                 for resource_item in resource_items:
                     task = asyncio.ensure_future(process_resource_item(resource_item, sem, session))
