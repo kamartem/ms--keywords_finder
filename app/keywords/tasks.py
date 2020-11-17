@@ -128,7 +128,7 @@ async def process_resource_item(resource_item_obj, sem, session):
 
 
 async def process():
-    sem = asyncio.Semaphore(10)
+    sem = asyncio.Semaphore(5)
     connector = aiohttp.TCPConnector(verify_ssl=False)
 
     async with aiohttp.ClientSession(headers={'User-Agent': USER_AGENT}, connector=connector) as session:
