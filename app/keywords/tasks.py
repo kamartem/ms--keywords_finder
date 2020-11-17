@@ -128,7 +128,7 @@ async def process_resource_item(resource_item_obj, sem, session):
 
 
 async def process():
-    sem = asyncio.Semaphore(5)
+    sem = asyncio.Semaphore(50)
     connector = aiohttp.TCPConnector(verify_ssl=False)
 
     async with aiohttp.ClientSession(headers={'User-Agent': USER_AGENT}, connector=connector) as session:
@@ -138,7 +138,7 @@ async def process():
             resources_qs = Resource.filter(
                 Q(done_http=False) & Q(done_https=False)
                 | Q(Q(done_https=True), Q(error_https__isnull=False), Q(done_http=False), join_type='AND')
-                | Q(Q(done_http=True), Q(error_http__isnull=False), Q(done_https=False), join_type='AND')).limit(100)
+                | Q(Q(done_http=True), Q(error_http__isnull=False), Q(done_https=False), join_type='AND')).limit(500)
 
             resources = await resources_qs
             resources_count = await resources_qs.count()
@@ -150,7 +150,7 @@ async def process():
                     task = asyncio.ensure_future(process_resource(resource, sem, session))
                     tasks.append(task)
             else:
-                resource_items_qs = ResourceItem.filter(done=False).limit(100)
+                resource_items_qs = ResourceItem.filter(done=False).limit(500)
                 resource_items = await resource_items_qs
                 resources_items_count = await resource_items_qs.count()
                 LOG.info(f"Got {resources_items_count} resource items")
