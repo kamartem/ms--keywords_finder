@@ -44,7 +44,7 @@ class ResourceItem(TimestampMixin, models.Model):
 
 Tortoise.init_models(["app.keywords.models"], "keywords")
 
-Task_Pydantic = pydantic_model_creator(Task, name="Task")
+Task_Pydantic = pydantic_model_creator(Task, name="Task", include=('id', 'keywords', 'created_date'))
 TaskIn_Pydantic = pydantic_model_creator(Task, name="TaskIn", exclude_readonly=True)
 
 Resource_Pydantic = pydantic_model_creator(Resource, name="Resource")

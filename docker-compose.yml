@@ -16,11 +16,7 @@ services:
       - .env
     depends_on:
       - postgres
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "200k"
-        max-file: "10"
+
   postgres:
     image: postgres:12.4-alpine
     restart: unless-stopped

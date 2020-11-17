@@ -1,14 +1,14 @@
 import asyncio
-import logging
 from collections import Counter
 from urllib.parse import urlparse
 
 import aiohttp
 import async_timeout
-from bs4 import BeautifulSoup
-from tortoise.query_utils import Q
 from aiologger import Logger
 from aiologger.levels import LogLevel
+from bs4 import BeautifulSoup
+from tortoise.query_utils import Q
+
 from app.keywords.models import Resource, ResourceItem
 
 LOG = Logger.with_default_handlers(level=LogLevel.INFO)
@@ -53,6 +53,19 @@ async def bound_fetch(url, sem, session):
         return await fetch(session, url)
 
 
+async def process_resource_item_content(resource_item_obj, keywords_to_found, error, content):
+    if error:
+        resource_item_obj.error = error
+    else:
+        content_lower = content.lower()
+        kwds = [kw for kw in keywords_to_found if kw.lower() in content_lower]
+        if len(kwds) > 0:
+            resource_item_obj.keywords_found = kwds
+
+    resource_item_obj.done = True
+    await resource_item_obj.save()
+
+
 async def process_resource(resource_obj, sem, session):
     scheme = 'http' if resource_obj.done_https else 'https'
     resource_url = f'{scheme}://{resource_obj.domain}'
@@ -79,12 +92,17 @@ async def process_resource(resource_obj, sem, session):
                         result.append(f'{proto}://{parsed.netloc}{parsed.path}')
         c = Counter(result)
         data = set([url[0] for url in c.most_common(5)])
-        if resource_url not in data:
+        if resource_url not in data and f'{resource_url}/' not in data:
             data.add(resource_url)
 
         for el in data:
             try:
-                await ResourceItem.create(resource_id=resource_obj.id, url=el)
+                resource_item = await ResourceItem.create(resource_id=resource_obj.id, url=el)
+                if el in [resource_url, f'{resource_url}/']:
+                    task = await resource_obj.task
+                    LOG.info(task)
+                    LOG.info(task.keywords)
+                    await process_resource_item_content(resource_item, task.keywords, None, content)
             except Exception as e:
                 LOG.error(e)
 
@@ -105,27 +123,15 @@ async def process_resource(resource_obj, sem, session):
 async def process_resource_item(resource_item_obj, sem, session):
     resource = await resource_item_obj.resource
     task = await resource.task
-    keywords_to_found = task.keywords
-
     error, content = await bound_fetch(resource_item_obj.url, sem, session)
-    if error:
-        resource_item_obj.error = error
-    else:
-
-        kwds = [kw for kw in keywords_to_found if kw.lower() in content.lower()]
-        if len(kwds) > 0:
-            resource_item_obj.keywords_found = kwds
-
-    resource_item_obj.done = True
-    await resource_item_obj.save()
+    await process_resource_item_content(resource_item_obj, task.keywords, error, content)
 
 
-async def process(loop):
+async def process():
     sem = asyncio.Semaphore(10)
-
     connector = aiohttp.TCPConnector(verify_ssl=False)
 
-    async with aiohttp.ClientSession(loop=loop, headers={'User-Agent': USER_AGENT}, connector=connector) as session:
+    async with aiohttp.ClientSession(headers={'User-Agent': USER_AGENT}, connector=connector) as session:
         while True:
             tasks = []
 

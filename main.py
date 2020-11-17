@@ -1,7 +1,6 @@
 import asyncio
 import logging
 
-import nest_asyncio
 from fastapi import FastAPI
 from tortoise.contrib.fastapi import register_tortoise
 
@@ -41,13 +40,12 @@ def create_app() -> FastAPI:
 
 
 app = create_app()
-nest_asyncio.apply()
 
 
 @app.on_event("startup")
 async def startup_event():
     loop = asyncio.get_event_loop()
-    loop.create_task(process(loop))
+    loop.create_task(process())
 
 
 @app.on_event("shutdown")
