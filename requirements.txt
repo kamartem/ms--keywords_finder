@@ -11,6 +11,6 @@ sentry_sdk==0.17.6
 asyncpg==0.21.0
 tortoise-orm==0.16.17
 aerich==0.3.3
-aiohttp==3.7.2
+aiohttp==3.7.4
 aiofiles==0.6.0
 aiologger==0.6.0
