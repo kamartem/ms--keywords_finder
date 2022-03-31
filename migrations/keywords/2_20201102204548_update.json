@@ -1,8 +1,0 @@
-{
-  "upgrade": [
-    "ALTER TABLE \"resource\" DROP COLUMN \"keywords_found\""
-  ],
-  "downgrade": [
-    "ALTER TABLE \"resource\" ADD \"keywords_found\" JSONB NOT NULL"
-  ]
-}

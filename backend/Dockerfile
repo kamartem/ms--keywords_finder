@@ -1,4 +1,4 @@
-ARG PYTHON_VERSION=3.8.5-buster
+ARG PYTHON_VERSION=3.9.12-bullseye
 
 FROM python:${PYTHON_VERSION}
 
@@ -6,7 +6,7 @@ COPY ./requirements.txt /requirements.txt
 
 RUN pip install -U pip && pip install -r /requirements.txt
 
-COPY ./ "/opt/"
+COPY .. "/opt/"
 
 WORKDIR "/opt"
 

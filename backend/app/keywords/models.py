@@ -8,7 +8,7 @@ class TimestampMixin():
 
 class Task(models.Model):
     id = fields.IntField(pk=True)
-    keywords = fields.data.JSONField()
+    keywords = fields.data.JSONField(default={})
     created_date = fields.DatetimeField(auto_now_add=True)
 
     # resources = relationship('Resource', back_populates='task')
@@ -42,7 +42,7 @@ class ResourceItem(TimestampMixin, models.Model):
     keywords_found = fields.data.JSONField(default=[])
 
 
-Tortoise.init_models(["app.keywords.models"], "keywords")
+# Tortoise.init_models(["app.keywords.models"], "keywords")
 
 Task_Pydantic = pydantic_model_creator(Task, name="Task", include=('id', 'keywords', 'created_date'))
 TaskIn_Pydantic = pydantic_model_creator(Task, name="TaskIn", exclude_readonly=True)

@@ -1,0 +1,16 @@
+fastapi==0.75.0
+psycopg2-binary==2.9.3
+uvicorn==0.17.6
+requests==2.27.1
+beautifulsoup4==4.10.0
+pyexcelerate==0.10.0
+lxml==4.8.0
+pydantic==1.9.0
+python-multipart==0.0.5
+sentry_sdk==1.5.8
+asyncpg==0.25.0
+tortoise-orm==0.19.0
+aerich==0.6.2
+aiohttp==3.8.1
+aiofiles==0.8.0
+aiologger==0.6.1

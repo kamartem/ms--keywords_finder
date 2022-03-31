@@ -7,7 +7,7 @@ import async_timeout
 from aiologger import Logger
 from aiologger.levels import LogLevel
 from bs4 import BeautifulSoup
-from tortoise.query_utils import Q
+from tortoise.expressions import Q
 
 from app.keywords.models import Resource, ResourceItem
 

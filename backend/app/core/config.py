@@ -18,11 +18,12 @@ DB_USER: Optional[str] = config('POSTGRES_USER', cast=str, default=None)
 DB_PASSWORD: Optional[Secret] = config('POSTGRES_PASSWORD', cast=Secret, default=None)
 DB_HOST: str = config('POSTGRES_HOST', cast=str, default='localhost')
 DB_PORT: int = config('POSTGRES_PORT', cast=int, default=5432)
-
-DATABASE_URI = f"postgres://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}"
-
+import logging
+LOG = logging.getLogger(__name__)
+LOG.error(f"postgres://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:5432/{DB_NAME}")
+DATABASE_URL = f"postgres://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}"
 TORTOISE_ORM = {
-    'connections': {'default': DATABASE_URI},
+    'connections': {'default': DATABASE_URL},
     'apps': {
         'keywords': {
             'models': ['app.keywords.models', 'aerich.models'],
