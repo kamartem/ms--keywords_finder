@@ -25,9 +25,11 @@ BAD_EXTENSIONS = [
     "xml",
     "ico",
     "xls",
-    "xlsx",
+    "xlsx",    "webp",
 ]
 BAD_EXTENSIONS = [f".{ext}" for ext in BAD_EXTENSIONS]
+
+BAD_DOMAINS = ["itunes.apple.com", "play.google.com", "liveinternet.ru"]
 
 USER_AGENT = "Mozilla/5.0 (iPad; CPU OS 9_1 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1"
 
@@ -38,8 +40,9 @@ async def fetch(session, url):
 
     try:
         with async_timeout.timeout(5):
-
-            async with session.get(url, verify_ssl=False) as response:
+            async with session.get(
+                url, verify_ssl=False, allow_redirects=False
+            ) as response:
                 if response.status != 200:
                     error = f"Status: {response.status}, reason: {response.reason}"
                 else:
@@ -80,11 +83,11 @@ async def process_resource_item_content(
     await resource_item_obj.save()
 
 
-async def process_resource(resource_obj, sem, session):
+async def process_resource(resource_obj, sem, client):
     scheme = "http" if resource_obj.done_https else "https"
     resource_url = f"{scheme}://{resource_obj.domain}"
 
-    error, content = await bound_fetch(resource_obj.get_current_url(), sem, session)
+    error, content = await bound_fetch(resource_obj.get_current_url(), sem, client)
     if error:
         if scheme == "https":
             resource_obj.error_https = error
@@ -93,19 +96,23 @@ async def process_resource(resource_obj, sem, session):
     else:
         result = []
         soup = BeautifulSoup(content, features="html.parser")
-        links = [a.get("href") for a in soup.find_all("a", href=True)]
+        links = [a.get("href").lower() for a in soup.find_all("a", href=True)]
 
         for link in links:
-            if link.startswith("/"):
-                result.append(f"{resource_url}{link}")
-            else:
-                parsed = urlparse(link)
-                if resource_obj.domain == parsed.netloc and all(
-                    x not in link[-20:].lower() for x in BAD_EXTENSIONS
-                ):
-                    proto = parsed.scheme if parsed.scheme else scheme
-                    if proto in ("http", "https"):
-                        result.append(f"{proto}://{parsed.netloc}{parsed.path}")
+            if link.startswith("//"):
+                continue  # external link
+            elif link.startswith("/"):
+                link = f"{resource_url}{link}"
+
+            parsed = urlparse(link)
+            if (
+                resource_obj.domain == parsed.netloc
+                and all(x not in link[-8:] for x in BAD_EXTENSIONS)
+                and all(x not in link for x in BAD_DOMAINS)
+            ):
+                proto = parsed.scheme if parsed.scheme else scheme
+                if proto in ("http", "https"):
+                    result.append(f"{proto}://{parsed.netloc}{parsed.path}")
         c = Counter(result)
         data = set([url[0] for url in c.most_common(5)])
         if resource_url not in data and f"{resource_url}/" not in data:
@@ -147,10 +154,10 @@ async def process_resource(resource_obj, sem, session):
     await resource_obj.save()
 
 
-async def process_resource_item(resource_item_obj, sem, session):
+async def process_resource_item(resource_item_obj, sem, client):
     resource = await resource_item_obj.resource
     task = await resource.task
-    error, content = await bound_fetch(resource_item_obj.url, sem, session)
+    error, content = await bound_fetch(resource_item_obj.url, sem, client)
     await process_resource_item_content(
         resource_item_obj, task.keywords, error, content
     )
@@ -162,7 +169,7 @@ async def process():
 
     async with aiohttp.ClientSession(
         headers={"User-Agent": USER_AGENT}, connector=connector
-    ) as session:
+    ) as client:
         while True:
             tasks = []
 
@@ -190,7 +197,7 @@ async def process():
             if resources_count > 0:
                 for resource in resources:
                     task = asyncio.ensure_future(
-                        process_resource(resource, sem, session)
+                        process_resource(resource, sem, client)
                     )
                     tasks.append(task)
             else:
@@ -201,7 +208,7 @@ async def process():
 
                 for resource_item in resource_items:
                     task = asyncio.ensure_future(
-                        process_resource_item(resource_item, sem, session)
+                        process_resource_item(resource_item, sem, client)
                     )
                     tasks.append(task)
 
