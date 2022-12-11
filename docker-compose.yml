@@ -15,12 +15,27 @@ services:
       - backend_db
     env_file:
       - .env
+    deploy:
+      resources:
+        limits:
+          cpus: '0.7'
+          memory: 300M
+        reservations:
+          cpus: '0.1'
+          memory: 200M
 
   backend_db:
     image: postgres:12.4-alpine
     restart: unless-stopped
-    command: postgres -c max_connections=100 -c shared_buffers=512MB -c effective_cache_size=1536MB -c work_mem=5242kB -c maintenance_work_mem=128MB -c min_wal_size=1GB -c max_wal_size=2GB -c checkpoint_completion_target=0.7 -c wal_buffers=16MB -c default_statistics_target=100
     volumes:
       - backend_db_data:/var/lib/postgresql/data
     env_file:
       - .env
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 250M
+        reservations:
+          cpus: '0.10'
+          memory: 100M
