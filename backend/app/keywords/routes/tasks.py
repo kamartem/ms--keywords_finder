@@ -42,7 +42,7 @@ async def create_task(data: TextAreaTask):
     urls_2d = [
         line.split() for line in data.pop("urls").lower().splitlines() if line
     ]  # multiple urls in one line
-    urls = list(itertools.chain(*urls_2d))
+    urls = list(set(itertools.chain(*urls_2d)))
 
     try:
         resources_to_create = []
