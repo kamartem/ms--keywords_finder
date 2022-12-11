@@ -1,7 +1,8 @@
-from tortoise import Tortoise, fields, models
+from tortoise import fields, models
 from tortoise.contrib.pydantic import pydantic_model_creator
 
-class TimestampMixin():
+
+class TimestampMixin:
     created_at = fields.DatetimeField(null=True, auto_now_add=True)
     modified_at = fields.DatetimeField(null=True, auto_now=True)
 
@@ -13,13 +14,13 @@ class Task(models.Model):
 
     # resources = relationship('Resource', back_populates='task')
     class Meta:
-        table = 'tasks'
+        table = "tasks"
 
 
 class Resource(TimestampMixin, models.Model):
     id = fields.IntField(pk=True)
     domain = fields.CharField(max_length=255)
-    task = fields.relational.ForeignKeyField('keywords.Task')
+    task = fields.relational.ForeignKeyField("keywords.Task")
     done = fields.data.BooleanField(default=False)
     done_http = fields.data.BooleanField(default=False)
     done_https = fields.data.BooleanField(default=False)
@@ -28,15 +29,15 @@ class Resource(TimestampMixin, models.Model):
     order = fields.BigIntField(null=True)
 
     def get_current_url(self):
-        scheme = 'http' if self.done_https else 'https'
-        resource_url = f'{scheme}://{self.domain}'
+        scheme = "http" if self.done_https else "https"
+        resource_url = f"{scheme}://{self.domain}"
         return resource_url
 
 
 class ResourceItem(TimestampMixin, models.Model):
     id = fields.IntField(pk=True)
     url = fields.CharField(max_length=255)
-    resource = fields.relational.ForeignKeyField('keywords.Resource')
+    resource = fields.relational.ForeignKeyField("keywords.Resource")
     done = fields.data.BooleanField(default=False)
     error = fields.data.TextField(null=True, default=None)
     keywords_found = fields.data.JSONField(default=[])
@@ -44,11 +45,17 @@ class ResourceItem(TimestampMixin, models.Model):
 
 # Tortoise.init_models(["app.keywords.models"], "keywords")
 
-Task_Pydantic = pydantic_model_creator(Task, name="Task", include=('id', 'keywords', 'created_date'))
+Task_Pydantic = pydantic_model_creator(
+    Task, name="Task", include=("id", "keywords", "created_date")
+)
 TaskIn_Pydantic = pydantic_model_creator(Task, name="TaskIn", exclude_readonly=True)
 
 Resource_Pydantic = pydantic_model_creator(Resource, name="Resource")
-ResourceIn_Pydantic = pydantic_model_creator(Resource, name="ResourceIn", exclude_readonly=True)
+ResourceIn_Pydantic = pydantic_model_creator(
+    Resource, name="ResourceIn", exclude_readonly=True
+)
 
 ResourceItem_Pydantic = pydantic_model_creator(ResourceItem, name="ResourceItem")
-ResourceItemIn_Pydantic = pydantic_model_creator(ResourceItem, name="ResourceItemIn", exclude_readonly=True)
+ResourceItemIn_Pydantic = pydantic_model_creator(
+    ResourceItem, name="ResourceItemIn", exclude_readonly=True
+)

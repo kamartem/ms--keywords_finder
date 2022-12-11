@@ -12,7 +12,7 @@ from app.keywords.tasks import process
 LOG = logging.getLogger(__name__)
 
 
-def init_db(app: FastAPI)-> None:
+def init_db(app: FastAPI) -> None:
     register_tortoise(app=app, config=TORTOISE_ORM)
 
 

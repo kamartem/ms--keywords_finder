@@ -6,48 +6,49 @@ from starlette.datastructures import CommaSeparatedStrings, Secret
 
 # from app.apps.keywords.serializers.database import DatabaseURL
 
-p: Path = Path(__file__).parents[1] / '.env'
+p: Path = Path(__file__).parents[1] / ".env"
 config: Config = Config(p if p.exists() else None)
 
 ##########################################################################
 # DataBase settings
 ##########################################################################
 
-DB_NAME: str = config('POSTGRES_NAME', cast=str)
-DB_USER: Optional[str] = config('POSTGRES_USER', cast=str, default=None)
-DB_PASSWORD: Optional[Secret] = config('POSTGRES_PASSWORD', cast=Secret, default=None)
-DB_HOST: str = config('POSTGRES_HOST', cast=str, default='localhost')
-DB_PORT: int = config('POSTGRES_PORT', cast=int, default=5432)
+DB_NAME: str = config("POSTGRES_NAME", cast=str)
+DB_USER: Optional[str] = config("POSTGRES_USER", cast=str, default=None)
+DB_PASSWORD: Optional[Secret] = config("POSTGRES_PASSWORD", cast=Secret, default=None)
+DB_HOST: str = config("POSTGRES_HOST", cast=str, default="localhost")
+DB_PORT: int = config("POSTGRES_PORT", cast=int, default=5432)
 import logging
+
 LOG = logging.getLogger(__name__)
 LOG.error(f"postgres://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:5432/{DB_NAME}")
 DATABASE_URL = f"postgres://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}"
 TORTOISE_ORM = {
-    'connections': {'default': DATABASE_URL},
-    'apps': {
-        'keywords': {
-            'models': ['app.keywords.models', 'aerich.models'],
-            'default_connection': 'default',
+    "connections": {"default": DATABASE_URL},
+    "apps": {
+        "keywords": {
+            "models": ["app.keywords.models", "aerich.models"],
+            "default_connection": "default",
         },
     },
 }
 
-REDIS_IP: str = config('REDIS_IP', cast=str, default='127.0.0.1')
-REDIS_PORT: int = config('REDIS_PORT', cast=int, default=6379)
+REDIS_IP: str = config("REDIS_IP", cast=str, default="127.0.0.1")
+REDIS_PORT: int = config("REDIS_PORT", cast=int, default=6379)
 
-SENTRY_DSN: Optional[Secret] = config('SENTRY_DSN', cast=Secret, default=None)
+SENTRY_DSN: Optional[Secret] = config("SENTRY_DSN", cast=Secret, default=None)
 
-ARQ_BACKGROUND_FUNCTIONS: Optional[CommaSeparatedStrings] = config('ARQ_BACKGROUND_FUNCTIONS',
-                                                                   cast=CommaSeparatedStrings,
-                                                                   default=None)
+ARQ_BACKGROUND_FUNCTIONS: Optional[CommaSeparatedStrings] = config(
+    "ARQ_BACKGROUND_FUNCTIONS", cast=CommaSeparatedStrings, default=None
+)
 
 ##########################################################################
 # Server settings
 ##########################################################################
 
-SERVER_ADRESS = '0.0.0.0'
+SERVER_ADRESS = "0.0.0.0"
 SERVER_PORT = 8080
-SERVER_LOG_LEVEL = 'debug'
+SERVER_LOG_LEVEL = "debug"
 SERVER_WORKER_NUMBERS = 1
 
 ##########################################################################
@@ -82,17 +83,8 @@ LOGGING_CONFIG = {
         },
     },
     "loggers": {
-        "": {
-            "handlers": ["default"],
-            "level": "INFO"
-        },
-        "uvicorn.error": {
-            "level": "INFO"
-        },
-        "uvicorn.access": {
-            "handlers": ["access"],
-            "level": "INFO",
-            "propagate": False
-        },
+        "": {"handlers": ["default"], "level": "INFO"},
+        "uvicorn.error": {"level": "INFO"},
+        "uvicorn.access": {"handlers": ["access"], "level": "INFO", "propagate": False},
     },
 }

@@ -1,4 +1,3 @@
-
 import subprocess  # nosec
 
 import click
@@ -25,16 +24,20 @@ def database() -> None:
 
 
 @database.command(help="create database")
-@click.option('-n', '--name', default="fast_api", help='name for database')
+@click.option("-n", "--name", default="fast_api", help="name for database")
 def create(name: str) -> int:
     click.echo(f"Creating database name: {name}")
     return subprocess.call(["createdb", f"{name}"])  # nosec
 
 
 @database.command(help="Make migration")
-@click.option('-m', '--msg', default="autogenerate", help='Add a message, default=autogenerate')
+@click.option(
+    "-m", "--msg", default="autogenerate", help="Add a message, default=autogenerate"
+)
 def migration(msg: str) -> int:
-    return subprocess.call(["alembic", "revision", "--autogenerate", "-m", f"{msg}"])  # nosec
+    return subprocess.call(
+        ["alembic", "revision", "--autogenerate", "-m", f"{msg}"]
+    )  # nosec
 
 
 @database.command(help="apply migration")
